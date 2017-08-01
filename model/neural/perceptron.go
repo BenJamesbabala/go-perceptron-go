@@ -14,6 +14,16 @@ import (
 	mu "github.com/made2591/go-perceptron-go/util"
 )
 
+// MultiLayerPerceptron struct represents a k-level Perceptron network with a slice of n weights.
+type MultiLayerPerceptron struct {
+
+	Input []Perceptron
+	Hidden []Perceptron
+	Output []Perceptron
+	Bias float64
+
+}
+
 // Perceptron struct represents a simple Perceptron network with a slice of n weights.
 type Perceptron struct {
 
@@ -23,6 +33,11 @@ type Perceptron struct {
 	Bias float64
 	// Lrate represents learning rate of perceptron
 	Lrate float64
+
+	Value float64
+	Left []Perceptron
+	Right []Perceptron
+
 }
 
 // #######################################################################################
@@ -174,5 +189,167 @@ func Accuracy(actual []float64, predicted []float64) (int, float64) {
 
 	// return correct
 	return correct, float64(correct) / float64(len(actual)) * 100.0
+
+}
+
+
+// ############################################################################
+// Testing
+
+// Activation performs a perceptron prediction to passed stimulus.
+// It returns a float64 binary predicted value.
+// func Activation(perceptron *Perceptron, stimulus *Stimulus) float64 {
+
+// 	return mu.ScalarProduct(perceptron.Weights, stimulus.Dimensions)+perceptron.Bias
+
+// }
+
+func Sigmoid(v float64) float64 {
+
+	return 1 / (1 + Exp(-v))
+
+}
+
+func getOutputError(mlp *MultiLayerPerceptron, value float64) float64 {
+	
+	sum := 0
+	double d
+
+	for u_index, unit := range mlp.Input {
+
+		sum += unit.Value
+
+	}
+
+	if (sum % 2 != 0) {
+
+		d = 1.0
+
+	} else {
+
+		d = 0.0
+
+	}
+
+	return Abs(d - value)
+
+}
+
+func getHiddenError(mlp *MultiLayerPerceptron, int h_index, outDelta []float64) float64 {
+	
+	sum := 0.0
+
+	for o_index, ounit := range mlp.Hidden[h_index].Right {
+
+		sum += outDelta[o_index] * ounit.Weights[o_index]
+
+	}
+
+	return sum
+
+}
+
+func PresentInput(mlp *MultiLayerPerceptron, stimulus []float64) {
+
+	for i_expected, expected := range stimulus {
+
+		mlp.Input[i_expected].Value = expected
+
+	}
+
+}
+
+func ForwardStep(mlp *MultiLayerPerceptron) {
+
+	i := 0
+	v := 0.0
+
+	for h_index, hunit := range mlp.Hidden {
+
+		v = mlp.Bias
+
+		for u_index, unit := range mlp.Input {
+
+			v += unit.Weights[h_index] * unit.Value			
+
+		}
+
+		hunit.Value = Sigmoid(v)
+
+	}
+
+	for o_index, ounit := range mlp.Output {
+
+		v = mlp.Bias
+
+		for h_index, hunit := range mlp.Hidden {
+
+			v += hunit.Weights[h_index] * hunit.Value			
+
+		}
+
+		ounit.Value = Sigmoid(v)
+
+	}
+
+}
+
+func BackwardStep(mlp *MultiLayerPerceptron) {
+
+	i := 0
+	outError := make([]float64, len(mlp.Output))
+	outDelta := make([]float64, len(mlp.Output))
+	hidError := make([]float64, len(mlp.Hidden))
+	hidDelta := make([]float64, len(mlp.Hidden))
+
+	for o_index, ounit := range mlp.Output {
+
+		outError[o_index] = getOutputError(mlp, ounit.Value)
+
+		outDelta[o_index] = outError[o_index] * ounit.Value * (1.0 - ounit.Value)
+
+	}
+
+	for h_index, hunit := range mlp.Hidden {
+
+		hidError[h_index] = getHiddenError(mlp, h_index, outDelta)
+
+		hidDelta[h_index] = hidError[h_index] * hunit.Value * (1.0 - hunit.Value)
+
+	}	
+
+	for o_index, ounit := range mlp.Output {
+	
+		for o_index, ounit := range mlp.Output {
+	
+			h.weights[i] = learningRate * outputDelta[i] * h.value;
+	
+		}
+	
+	}
+
+}
+
+
+
+func TrainMultiLayerPerceptron(mlp *MultiLayerPerceptron, stimuli []Stimulus, maxEpochs int, maxError float64) {
+
+	epochs := 0
+	errors := make([]float64, len(stimuli))
+	done   := false
+
+	for {
+
+		for s_index, stimulus := range stimuli {
+
+			PresentInput(mlp, stimulus)
+
+			ForwardStep(mlp, stimulus)
+
+			errors[i] = BackwardStep(mlp, stimulus)
+
+		}
+
+	}
 
 }
